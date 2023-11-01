@@ -50,10 +50,9 @@ class Phone(Field):
     @value.setter
     def value(self, value: str) -> None:
         if len(value) == 10 and value.isdigit():
-           self.__privat_value = value
+            self.__privat_value = value
         else:
             raise ValueError("Phone number most be 10 didgit")
-
 
 
 class Birthday(Field):
@@ -172,13 +171,13 @@ class Record:
     #         daybirth = 365 - (datetime.today().date() - bir_th_day.date()).days
     #     return daybirth
 
-    def check_date(self, date:str):
+    def check_date(self, date: str):
         try:
             datetime.strptime(date, "%d-%m-%Y")
             return True
         except ValueError:
             return False
-    
+
     def __str__(self):
         if Birthday.birthday:
             print(self.name.value, self.phones, self.days_to_birthday(self.birthday))
