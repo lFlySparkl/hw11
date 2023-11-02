@@ -1,5 +1,6 @@
 from collections import UserDict
-from datetime import date, datetime
+from datetime import datetime
+import re
 
 
 class Field:
@@ -66,7 +67,7 @@ class Birthday(Field):
 
     @birthday.setter
     def birthday(self, birthday):
-        if not Birthday.is_date(self, birthday):
+        if not self.is_date(self, birthday):
             self.__privat_birthday = birthday
         else:
             ValueError("Invalid phone number format"),
@@ -74,13 +75,8 @@ class Birthday(Field):
             TypeError("Dont birtday")
 
     def is_date(self, birthday: str) -> None:
-        self.birhday = birthday
-        try:
-            self.birtday = datetime.strptime(self.birthday, "%d-%m-%Y").date()
-        except ValueError as err:
-            print(err)
-        else:
-            self.birhday = birthday
+        patern_birth = r"^(1|2)(9|0)[0-2,7-9][0-9]{1}(.|/| )(0|1)[0-9](.|/| )[0-3][0-9]"
+        return bool(re.match(patern_birth, birthday))
 
 
 class Record:
@@ -90,9 +86,9 @@ class Record:
 
     # Клас Record приймає ще один додатковий (опціональний) аргумент класу Birthday
     # Додамо функціонал роботи з Birthday у клас Record, а саме функцію days_to_birthday,
-    #  яка повертає кількість днів до наступного дня народження.
+    # яка повертає кількість днів до наступного дня народження.
     # Клас Record реалізує метод days_to_birthday, який повертає кількість днів до наступного дня народження контакту,
-    #  якщо день народження заданий.
+    # якщо день народження заданий.
 
     def __init__(self, name):
         self.name = Name(name)
@@ -127,60 +123,18 @@ class Record:
             return None
 
     def days_to_birthday(self, birthday: Birthday):
-        current_date = date.today()
-        if self.check_date(birthday):
-            print(birthday)
-            bd: date = datetime.strptime(birthday, "%d-%m-%Y").date()
-            if bd.month >= current_date.month:
-                if bd.day >= current_date.day and bd.month >= current_date.month:
-                    bd = bd.replace(year=current_date.year)
-                    days_to_bd = bd - current_date
-                    print(days_to_bd.days)
-                    return days_to_bd.days
-                else:
-                    if bd.day < current_date.day and bd.month >= current_date.month:
-                        bd = bd.replace(year=current_date.year)
-                        days_to_bd = bd - current_date
-                        print(days_to_bd.days)
-                        return days_to_bd.days
-                    else:
-                        bd = bd.replace(year=current_date.year + 1)
-                        days_to_bd = bd - current_date
-                        print(days_to_bd.days)
-                        return days_to_bd.days
-            else:
-                bd = bd.replace(year=current_date.year + 1)
-                days_to_bd = bd - current_date
-                print(days_to_bd.days)
-                days = str(days_to_bd.days)
-                return days
-        else:
-            print("wrong date")
-
-    # def days_to_birthday(self, birthday: Birthday):
-    #     self.birthday = birthday
-    #     day_birth = datetime.strptime(birthday, "%d-%m-%Y")
-    #     bir_th_day = day_birth.replace(
-    #         year=datetime.today().year, month=day_birth.month, day=day_birth.day
-    #     )
-    #     # daybirth = datetime.strptime(birthday, "%Y.%m.%d").date()
-    #     daybirth = datetime.today().date() - bir_th_day.date()
-    #     if daybirth.days < 0:
-    #         daybirth = (bir_th_day.date() - datetime.today().date()).days
-    #     else:
-    #         daybirth = 365 - (datetime.today().date() - bir_th_day.date()).days
-    #     return daybirth
-
-    def check_date(self, date: str):
-        try:
-            datetime.strptime(date, "%d-%m-%Y")
-            return True
-        except ValueError:
-            return False
+        self.birthday = birthday
+        date_split = datetime.strptime(
+            birthday.replace(" ", "-").replace(".", "-"), "%d-%m-%Y"
+        )
+        new_date_of_bd = date_split.replace(
+            year=datetime.today().year, month=date_split.month, day=date_split.day
+        )
+        result = new_date_of_bd.date() - datetime.today().date()
+        return result.days
 
     def __str__(self):
         if Birthday.birthday:
-            print(self.name.value, self.phones, self.days_to_birthday(self.birthday))
             return f"Contact name: {self.name.value}, phones: {'; '.join(p for p in self.phones)}, birth: {self.birthday} ({self.days_to_birthday(self.birthday)} day to birthday)"
         else:
             return f"Contact name: {self.name.value}, phones: {'; '.join(p for p in self.phones)}"
@@ -191,7 +145,6 @@ class AddressBook(UserDict):
     # коли книга дуже велика і треба показати вміст частинами, а не все одразу. Реалізуємо це через створення ітератора за записами.
     # AddressBook реалізує метод iterator,
     # який повертає генератор за записами AddressBook і за одну ітерацію повертає уявлення для N записів.
-    contacts = {}
 
     def add_record(self, contact: Record):
         self.data[contact.name.value] = contact
@@ -208,6 +161,19 @@ class AddressBook(UserDict):
         else:
             return None
 
+class Iterator:
+    MAX_VALUE = 0
+
+    def __init__(self, adressBook):
+        self.current_value = 0
+        self.adressBook = AddressBook
+        self.MAX_VALUE = len(adressBook.data)
+
+    def __next__(self):
+        if self.current_value < self.MAX_VALUE:
+            self.current_value += 1
+            return self.adressBook.data[self.current_value]
+        raise StopIteration
 
 if __name__ == "__main__":
     book = AddressBook()
@@ -215,13 +181,13 @@ if __name__ == "__main__":
     john_record.add_phone("5555555555")
     john_record.add_phone("1234567890")
     book.add_record(john_record)
-    john_record.days_to_birthday("20-07-1976")
+    john_record.days_to_birthday("05-11-1976")
     john_record
     book.add_record(john_record)
     john_record
     print(john_record)
     jane_record = Record("Jane")
-    jane_record.days_to_birthday("03-11-2002")
+    jane_record.days_to_birthday("03.11.2002")
     jane_record.add_phone("9876543210")
     book.add_record(jane_record)
     print(jane_record)
